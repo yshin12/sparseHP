@@ -1,0 +1,5 @@
+source('SIR_filtering_US_2020-06-08.R')
+source('SIR_filtering_Canada_2020-06-08.R')
+source('SIR_filtering_China_2020-06-08.R')
+source('SIR_filtering_South_Korea_2020-06-08.R')
+source('SIR_filtering_UK_2020-06-08.R')
