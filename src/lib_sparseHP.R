@@ -365,7 +365,7 @@ data_extract <- function(country.name, final.date, save.csv=FALSE){
   #########################################################
   # Change the country.name to match those in the dataset
   #########################################################
-  if (country.name =="South Korea") {
+  if (country.name =="South_Korea") {
     country.name = "Korea, South"  
   } else if (country.name == "UK") {
     country.name = "United Kingdom"
