@@ -11,8 +11,8 @@ library(doMC)
 library(parallel)
 
 n_cores = detectCores()
-registerDoMC(cores=n_cores)
-#registerDoMC(cores=5)
+#registerDoMC(cores=n_cores)
+registerDoMC(cores=5)
 
 source('lib_sparseHP.R')
 
@@ -21,10 +21,10 @@ source('lib_sparseHP.R')
 ######################################################
 
 country.name = "UK"     # The country name should match with the one in the 'coronavirus' R package
-final.date = "2020-06-08"   # Fianl date of the data: "YYYY-MM-DD". Default is today
+final.date = "2020-06-08"   # Final date of the data: "YYYY-MM-DD". Default is today
 if (is.null(final.date)) final.date=Sys.Date()
 
-Np = 328200000          # total population in US
+Np = 66400000           # total population in UK
 min_cum_case = 100      # The first date of the analysis begins when the number of cumulative cases reaches 100
 lockdown = "2020-03-24" # March 24th: Lockdown measures begin
 ghat = 1/18             # gamma
@@ -106,7 +106,7 @@ lockdown_X = (date_seq-lockdown_date)*lockdown_indicator
 
 # switch for cross-validation
 
-  cross_validation = 0
+  cross_validation = 1
   tuning_selection = 1
 
 ############################################### ERASE LATER ###################################################
@@ -127,8 +127,8 @@ if  (selection_L2L0c == 1){
 
   # Set the tuning parameters
     if (cross_validation == 0){
-      l0constraint = 4
-      l2penalty = 32
+      l0constraint = 2
+      l2penalty = 1
     }
     else{
       l0constraint_set = c(2:4)
@@ -236,7 +236,7 @@ if  (selection_L2L0c == 1){
 
     # Set the tuning parameters
     if (tuning_selection == 0){
-      ld = 0.8                 # User can set the tuning parameter lambda
+      ld = 2.7                 # User can set the tuning parameter lambda
     }
     else{
       ld_set = seq(0,10,0.1)
@@ -415,4 +415,6 @@ if  (selection_SQRT_L1 == 1){
   g.R = 100*diff(filter_Rhat, differences=1) / filter_Rhat[1:(n-1)]
   print(factor(round(g.R,2)))
   print(factor(round(diff(g.R,1),2)))
+
+  save.image(paste0('../results/',file_name,'.RData'))
 sink()

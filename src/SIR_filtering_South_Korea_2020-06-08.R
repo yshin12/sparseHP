@@ -10,9 +10,9 @@ library(viridis)
 library(doMC)
 library(parallel)
 
-n_cores = detectCores() 
-registerDoMC(cores=n_cores)
-#registerDoMC(cores=5)
+n_cores = detectCores()
+#registerDoMC(cores=n_cores)
+registerDoMC(cores=5)
 
 source('lib_sparseHP.R')
 
@@ -21,7 +21,7 @@ source('lib_sparseHP.R')
 ######################################################
 
 country.name = "South_Korea"     # The country name should match with the one in the 'coronavirus' R package
-final.date = "2020-06-08"   # Fianl date of the data: "YYYY-MM-DD". Default is today
+final.date = "2020-06-08"   # Final date of the data: "YYYY-MM-DD". Default is today
 if (is.null(final.date)) final.date=Sys.Date()
 
 Np = 51640000          # total population in South Korea
@@ -29,7 +29,7 @@ min_cum_case = 100      # The first date of the analysis begins when the number 
 lockdown = "2020-02-21" # Feb 21: first date
 ghat = 1/18             # gamma
 
-bwl = 3   
+bwl = 3
 
 output_file_name = paste0("../results/",country.name,"_",final.date,".out")
 sink(output_file_name)
@@ -84,7 +84,7 @@ lockdown_date = date_seq[date==lockdown]     # define lockdown_date to be consis
 lockdown_indicator = (date_seq > lockdown_date)
 lockdown_X = (date_seq-lockdown_date)*lockdown_indicator
 
- 
+
 # Piecewise time trend: pre-lockdown: constant; post-lockdown: linear time trend
 
    lrg    = lm(ly~lockdown_X)
@@ -96,34 +96,34 @@ lockdown_X = (date_seq-lockdown_date)*lockdown_indicator
 
 ######################################################
 ### Selection of Method for Filtering              ###
-######################################################       
- 
+######################################################
+
 # options below will be turned off if zero is selected and on if one is selected
  selection_L2L0c = 1
  selection_L2 = 0
  selection_L1 = 1
  selection_SQRT_L1= 0
- 
+
  draw_L2L0c_L1_togher = 1
- 
-# switch for cross-validation     
-  
-  cross_validation = 0
+
+# switch for cross-validation
+
+  cross_validation = 1
   tuning_selection = 1
 
 #####################################################
 ### Sparse HP                                     ###
 ### L2/L0-constrained Trend Filtering             ###
-#####################################################    
-  
-if  (selection_L2L0c == 1){  
+#####################################################
+
+if  (selection_L2L0c == 1){
   cat("------------------------------------- \n")
   cat("Sparse HP \n")
   cat("------------------------------------- \n")
-  
-  file_name = paste0("SparseHP_",country.name,"_",final.date)  
-  
-  # Set the tuning parameters  
+
+  file_name = paste0("SparseHP_",country.name,"_",final.date)
+
+  # Set the tuning parameters
     if (cross_validation == 0){
       l0constraint = 4
       l2penalty = 4
@@ -141,13 +141,13 @@ if  (selection_L2L0c == 1){
       comp_time <- toc()
 
       min_l2_l0 = result[which.min(result$obj_val),c(1:2)]
-      
+
       l2penalty = min_l2_l0[1,1]
       l0constraint = min_l2_l0[1,2]
-      
+
       cv_save=list(result=result, comp_time=comp_time)
       save.image(paste0('../results/',cv_file_name,'.RData'))
-      
+
       # draw the cross-validation result graph
       result[,2] = as.factor(result[,2])
       f = ggplot(data=result, aes(x=l2, y=obj_val, group=l0, color=l0) ) +
@@ -162,17 +162,17 @@ if  (selection_L2L0c == 1){
         #scale_x_continuous(trans = "log2", breaks=c(0.125,0.25,0.5,1,2,4,8,16,32)) +
         scale_x_continuous(trans = "log2") +
         geom_vline(xintercept = min_l2_l0$l2, linetype="dashed", color="red")
-      
+
       print(f)
       ggsave(paste0('../results/',cv_file_name,"_Graph.pdf"))
-      
+
     }
-    
-    # Estimate L2/L0-constrained filtering    
-    l0_results = l0tfc(y=ly,l0constraint=l0constraint,M=M,l2penalty=l2penalty) 
+
+    # Estimate L2/L0-constrained filtering
+    l0_results = l0tfc(y=ly,l0constraint=l0constraint,M=M,l2penalty=l2penalty)
         l0_obj = l0_results$objval
         l0_est = l0_results$x
-    
+
        betaHat = l0_est[1:length(ly)]
           zHat = l0_est[(length(ly)+1):length(l0_est)]
          SHP_kink_dates = date[zHat==1] + 1          # Double difference makes one lag. Should add 1 more day
@@ -182,7 +182,7 @@ if  (selection_L2L0c == 1){
          cat('---------------------------------------------------------------- \n')
          cat('\n\n \n')
          SHP_kink_dates=c(SHP_kink_dates)
-         
+
          filter_yhat   = betaHat
          filter_resid  = ly - betaHat
          filter_Rhat   = exp(betaHat)/ghat
@@ -192,14 +192,14 @@ if  (selection_L2L0c == 1){
          cat('\n\n fidelity : ',fidelity,'\n' )
          cat('---------------------------------------------------------------- \n')
          cat('\n\n \n')
-         
-    
+
+
 
         data = data.frame(
            date,
            lockdown_date = 0,
            R,            # R_t original scale
-           ly,           # log(Y_t) = beta_t 
+           ly,           # log(Y_t) = beta_t
            # linear fit reulsts
            lyhat,        # fitted value of linear reg, log scale
            lRhat,        # fitted value of linear reg, R_t scale
@@ -212,27 +212,27 @@ if  (selection_L2L0c == 1){
            filter_Rresid # residuals, R_t scale
           #kinks         # kink dates
          )
-        
+
         if (draw_L2L0c_L1_togher==0) {
          draw_fit_R0(data, country.name, file_name)
          draw_resid_R0(data, country.name, file_name)
          draw_fit_beta(data, country.name, file_name)
          draw_resid_beta(data, country.name, file_name)
     }
-}   
+}
 
   #####################################################
   ### L1                                            ###
-  #####################################################    
-  
-  if  (selection_L1 == 1){  
+  #####################################################
+
+  if  (selection_L1 == 1){
     cat("------------------------------------- \n")
     cat("L1 \n")
     cat("------------------------------------- \n")
-    
-    file_name = paste0("L1_",country.name,"_",final.date)  
-    
-    # Set the tuning parameters  
+
+    file_name = paste0("L1_",country.name,"_",final.date)
+
+    # Set the tuning parameters
     if (tuning_selection == 0){
       ld = 3                 # User can set the tuning parameter lambda
     }
@@ -240,9 +240,9 @@ if  (selection_L2L0c == 1){
       ld_set = seq(0,10,0.1)
       l1_ld_out <- l1tf_tuning(y=ly, fidelity, ld_set, country.name, file_name)
       ld = l1_ld_out$opt_ld
-    }  
-    
-    l1_results = l1tf(y=ly,lambda=ld) 
+    }
+
+    l1_results = l1tf(y=ly,lambda=ld)
     betaHat = l1_results$betahat
     L1_kink_dates =  date[abs(diff(x=betaHat, differences=2))>1e-6] + 1   # Double difference makes one lag. Should add 1 more day
     cat('\n\n Kink dates: \n')
@@ -250,13 +250,13 @@ if  (selection_L2L0c == 1){
     print(L1_kink_dates)
     cat('---------------------------------------------------------------- \n')
     cat('\n\n \n')
-    
-    
+
+
     L1_filter_yhat   = betaHat
     L1_filter_resid  = ly - betaHat
     L1_filter_Rhat   = exp(betaHat)/ghat
     L1_filter_Rresid = R - filter_Rhat
-    
+
     if (draw_L2L0c_L1_togher == 1) {
       data = cbind(data,
                    L1_filter_yhat,
@@ -274,7 +274,7 @@ if  (selection_L2L0c == 1){
       date,
       lockdown_date,
       R,            # R_t original scale
-      ly,           # log(Y_t) = beta_t 
+      ly,           # log(Y_t) = beta_t
       # SHP-filter fit reulsts
       lyhat,        # fitted value of linear reg, log scale
       lRhat,        # fitted value of linear reg, R_t scale
@@ -286,48 +286,48 @@ if  (selection_L2L0c == 1){
       filter_resid = L1_filter_Rhat, # residuals, log scale
       filter_Rresid =L1_filter_Rresid# residuals, R_t scale
     )
-    
+
     draw_fit_R0(data, country.name, file_name)
     draw_resid_R0(data, country.name, file_name)
     draw_fit_beta(data, country.name, file_name)
     draw_resid_beta(data, country.name, file_name)
   }
 
-}   
-  
+}
+
 #####################################################
 ### HP                                            ###
-#####################################################    
+#####################################################
 
-if  (selection_L2 == 1){  
+if  (selection_L2 == 1){
   cat("------------------------------------- \n")
   cat("HP \n")
   cat("------------------------------------- \n")
-  
-  file_name = paste0("HP_",country.name,"_",final.date)  
 
-  # Set the tuning parameters  
+  file_name = paste0("HP_",country.name,"_",final.date)
+
+  # Set the tuning parameters
   if (cross_validation == 0){
-    ld = 100      
+    ld = 100
   }
   else{
     ld_set = seq(120,200,5)
     l2_ld_out <- l2tf_tuning(y=ly, fidelity, ld_set, country.name, file_name)
     ld = l2_ld_out$opt_ld
-  }  
-  l2_results = l2tf(y=ly,lambda=ld) 
+  }
+  l2_results = l2tf(y=ly,lambda=ld)
   betaHat = l2_results$betahat
-  
+
   filter_yhat   = betaHat
   filter_resid  = ly - betaHat
   filter_Rhat   = exp(betaHat)/ghat
   filter_Rresid = R - filter_Rhat
-  
+
   data = data.frame(
     date,
     lockdown_date,
     R,            # R_t original scale
-    ly,           # log(Y_t) = beta_t 
+    ly,           # log(Y_t) = beta_t
     # linear fit reulsts
     lyhat,        # fitted value of linear reg, log scale
     lRhat,        # fitted value of linear reg, R_t scale
@@ -339,26 +339,26 @@ if  (selection_L2 == 1){
     filter_resid, # residuals, log scale
     filter_Rresid # residuals, R_t scale
   )
-  
+
   draw_fit_R0(data, country.name, file_name)
   draw_resid_R0(data, country.name, file_name)
   draw_fit_beta(data, country.name, file_name)
   draw_resid_beta(data, country.name, file_name)
-}   
+}
 
 
 #####################################################
 ### SQRT L1                                            ###
-#####################################################    
+#####################################################
 
-if  (selection_SQRT_L1 == 1){  
+if  (selection_SQRT_L1 == 1){
   cat("------------------------------------- \n")
   cat("SQRT L1 \n")
   cat("------------------------------------- \n")
-  
-  file_name = paste0("SQRT_L1_",country.name,"_",final.date)  
 
-  # Set the tuning parameters  
+  file_name = paste0("SQRT_L1_",country.name,"_",final.date)
+
+  # Set the tuning parameters
   if (cross_validation == 0){
     ld = 1.9                  # User can set the tuning parameter lambda
   }
@@ -366,12 +366,12 @@ if  (selection_SQRT_L1 == 1){
     ld_set = seq(0,10,0.1)
     sqrt_l1_ld_out <- sqrt_l1tf_tuning(y=ly, fidelity, ld_set, country.name, file_name)
     ld = sqrt_l1_ld_out$opt_ld
-  }  
-  
-  
-  sqrt_l1_results = sqrt_l1tf(y=ly,lambda=ld) 
+  }
+
+
+  sqrt_l1_results = sqrt_l1tf(y=ly,lambda=ld)
   betaHat = sqrt_l1_results$betahat
-  kink_dates =  date[abs(diff(x=betaHat, differences=2))>1e-6] 
+  kink_dates =  date[abs(diff(x=betaHat, differences=2))>1e-6]
   cat('\n\n Kink dates: \n')
   cat('---------------------------------------------------------------- \n')
   print(kink_dates)
@@ -381,12 +381,12 @@ if  (selection_SQRT_L1 == 1){
   filter_resid  = ly - betaHat
   filter_Rhat   = exp(betaHat)/ghat
   filter_Rresid = R - filter_Rhat
-  
+
   data = data.frame(
     date,
     lockdown_date,
     R,            # R_t original scale
-    ly,           # log(Y_t) = beta_t 
+    ly,           # log(Y_t) = beta_t
     # linear fit reulsts
     lyhat,        # fitted value of linear reg, log scale
     lRhat,        # fitted value of linear reg, R_t scale
@@ -398,20 +398,21 @@ if  (selection_SQRT_L1 == 1){
     filter_resid, # residuals, log scale
     filter_Rresid # residuals, R_t scale
   )
-  
+
   draw_fit_R0(data, country.name, file_name)
   draw_resid_R0(data, country.name, file_name)
   draw_fit_beta(data, country.name, file_name)
   draw_resid_beta(data, country.name, file_name)
-}   
+}
 
   cat("------------------------------------- \n")
   cat("Calculate the Growth Rate of R_0(t) \n")
   cat("------------------------------------- \n")
-  
+
   g.logbeta = 100*diff(filter_yhat, differences=1) / filter_yhat[1:(n-1)]
   g.R = 100*diff(filter_Rhat, differences=1) / filter_Rhat[1:(n-1)]
   print(factor(round(g.R,2)))
   print(factor(round(diff(g.R,1),2)))
-  
+
+  save.image(paste0('../results/',file_name,'.RData'))
 sink()

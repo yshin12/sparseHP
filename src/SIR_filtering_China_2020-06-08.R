@@ -11,8 +11,8 @@ library(doMC)
 library(parallel)
 
 n_cores = detectCores()
-registerDoMC(cores=n_cores)
-#registerDoMC(cores=5)
+#registerDoMC(cores=n_cores)
+registerDoMC(cores=5)
 
 source('lib_sparseHP.R')
 
@@ -21,7 +21,7 @@ source('lib_sparseHP.R')
 ######################################################
 
 country.name = "China"     # The country name should match with the one in the 'coronavirus' R package
-final.date = "2020-06-08"   # Fianl date of the data: "YYYY-MM-DD". Default is today
+final.date = "2020-06-08"   # Final date of the data: "YYYY-MM-DD". Default is today
 if (is.null(final.date)) final.date=Sys.Date()
 
 Np = 1400050000         # total population in China
@@ -108,7 +108,7 @@ lockdown_X = (date_seq-lockdown_date)*lockdown_indicator
 
 # switch for cross-validation
 
-  cross_validation = 0
+  cross_validation = 1
   tuning_selection = 1
 
 
@@ -121,7 +121,7 @@ if  (selection_L2L0c == 1){
   cat("------------------------------------- \n")
   cat("Sparse HP \n")
   cat("------------------------------------- \n")
-  
+
   file_name = paste0("SparseHP_",country.name,"_",final.date)
 
   # Set the tuning parameters
@@ -165,7 +165,7 @@ if  (selection_L2L0c == 1){
         geom_vline(xintercept = min_l2_l0$l2, linetype="dashed", color="red")
 
       print(f)
-      ggsave(paste0('../results/',cv_file_name,"_Graph.pdf"))
+      ggsave(paste0('../results/',cv_file_name,"_Graph.pdf"), width = 5, height = 5, units = "in")
 
     }
 
@@ -230,7 +230,7 @@ if  (selection_L2L0c == 1){
     cat("------------------------------------- \n")
     cat("L1 \n")
     cat("------------------------------------- \n")
-    
+
     file_name = paste0("L1_",country.name,"_",final.date)
 
     # Set the tuning parameters
@@ -304,7 +304,7 @@ if  (selection_L2 == 1){
   cat("------------------------------------- \n")
   cat("HP \n")
   cat("------------------------------------- \n")
-  
+
   file_name = paste0("HP_",country.name,"_",final.date)
 
   # Set the tuning parameters
@@ -356,7 +356,7 @@ if  (selection_SQRT_L1 == 1){
   cat("------------------------------------- \n")
   cat("SQRT L1 \n")
   cat("------------------------------------- \n")
-  
+
   file_name = paste0("SQRT_L1_",country.name,"_",final.date)
 
   # Set the tuning parameters
@@ -406,14 +406,15 @@ if  (selection_SQRT_L1 == 1){
   draw_resid_beta(data, country.name, file_name)
 }
 
-  
+
   cat("------------------------------------- \n")
   cat("Calculate the Growth Rate of R_0(t) \n")
   cat("------------------------------------- \n")
-  
+
   g.logbeta = 100*diff(filter_yhat, differences=1) / filter_yhat[1:(n-1)]
   g.R = 100*diff(filter_Rhat, differences=1) / filter_Rhat[1:(n-1)]
   print(factor(round(g.R,2)))
   print(factor(round(diff(g.R,1),2)))
-  
+
+save.image(paste0('../results/',file_name,'.RData'))
 sink()

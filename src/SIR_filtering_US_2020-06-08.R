@@ -22,7 +22,7 @@ source('lib_sparseHP.R')
 
 country.name = "US"     # The country name should match with the one in the 'coronavirus' R package
 
-final.date = "2020-06-08"           # Fianl date of the data: "YYYY-MM-DD". Default is today
+final.date = "2020-06-08"           # Final date of the data: "YYYY-MM-DD". Default is today
 if (is.null(final.date)) final.date=Sys.Date()
 
 Np = 328200000          # total population in US
@@ -98,18 +98,18 @@ lockdown_X = (date_seq-lockdown_date)*lockdown_indicator
 
 # options below will be turned off if zero is selected and on if one is selected
  selection_L2L0c = 1
- selection_L2 = 1
+ selection_L2 = 0
  selection_L1 = 1
- selection_SQRT_L1= 1
+ selection_SQRT_L1= 0
 
  draw_L2L0c_L1_togher = 1
 
 # switch for cross-validation
 
-  cross_validation = 0
+  cross_validation = 1
   tuning_selection = 1
 
-  
+
 #####################################################
 ### Sparse HP                                     ###
 ### L2/L0-constrained Trend Filtering             ###
@@ -119,7 +119,7 @@ if  (selection_L2L0c == 1){
   cat("------------------------------------- \n")
   cat("Sparse HP \n")
   cat("------------------------------------- \n")
-  
+
   file_name = paste0("SparseHP_", country.name,"_" ,final.date)
 
   # Set the tuning parameters
@@ -228,7 +228,7 @@ if  (selection_L2L0c == 1){
     cat("------------------------------------- \n")
     cat("L1 \n")
     cat("------------------------------------- \n")
-    
+
     file_name = paste0("L1_",country.name,"_",final.date)
 
     # Set the tuning parameters
@@ -303,7 +303,7 @@ if  (selection_L2 == 1){
   cat("------------------------------------- \n")
   cat("HP \n")
   cat("------------------------------------- \n")
-  
+
   file_name = paste0("HP_",country.name,"_",final.date)
 
   # Set the tuning parameters
@@ -356,7 +356,7 @@ if  (selection_SQRT_L1 == 1){
   cat("------------------------------------- \n")
   cat("SQRT L1 \n")
   cat("------------------------------------- \n")
-  
+
   file_name = paste0("SQRT_L1_",country.name,"_",final.date)
 
   # Set the tuning parameters
@@ -406,14 +406,15 @@ if  (selection_SQRT_L1 == 1){
   draw_resid_beta(data, country.name, file_name)
 }
 
-  
+
   cat("------------------------------------- \n")
   cat("Calculate the Growth Rate of R_0(t) \n")
   cat("------------------------------------- \n")
-  
+
   g.logbeta = 100*diff(filter_yhat, differences=1) / filter_yhat[1:(n-1)]
   g.R = 100*diff(filter_Rhat, differences=1) / filter_Rhat[1:(n-1)]
   print(factor(round(g.R,2)))
   print(factor(round(diff(g.R,1),2)))
-  
+
+  save.image(paste0('../results/',file_name,'.RData'))
 sink()
